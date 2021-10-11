@@ -9,7 +9,7 @@ The goal of this repo is to generate as many insights as possible from raw data 
 
 * What to expect:
   - Data cleaning;
-  - Temporal analysis;
+  - Temporal analysis and Streamlit;
   - Predictive analysis;
   - Machine learning
 
