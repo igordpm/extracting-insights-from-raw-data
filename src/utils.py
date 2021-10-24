@@ -426,7 +426,7 @@ def plot_revenue_by_type(d_f, title=None):
     return fig
 
 # This is just a copypasta of code from part 02, check the notebook for detailed info:
-def plot_retention_rate(d_f):
+def plot_retention_rate(d_f, title=None):
     """
     Generate a line plot of retention rate by month.  
 
@@ -434,6 +434,8 @@ def plot_retention_rate(d_f):
     ----------
     d_f : pandas.DataFrame
         Dataframe of invoices.
+    title : str, optional
+        Title of plot.
 
     Returns
     -------
@@ -461,7 +463,7 @@ def plot_retention_rate(d_f):
         previous_month = ordered_months[i]
         retention_data['Month'] = selected_month
         retention_data['TotalCustomers'] = retention[selected_month].sum()
-        retention_data['Reretention_datatainedCustomers'] = retention.query(f"({selected_month} > 0) & ({previous_month} > 0)")[selected_month].sum()
+        retention_data['RetainedCustomers'] = retention.query(f"({selected_month} > 0) & ({previous_month} > 0)")[selected_month].sum()
         retention_array.append(retention_data)
     retention = pd.DataFrame(retention_array)
     retention['RetentionRate'] = retention['RetainedCustomers']/retention['TotalCustomers']
@@ -471,7 +473,7 @@ def plot_retention_rate(d_f):
             y='RetentionRate',
             x='Month')
     )
-    fig.update_layout(title='Retention rate',
+    fig.update_layout(title=title,
                     title_x=0.5
     )
     return fig

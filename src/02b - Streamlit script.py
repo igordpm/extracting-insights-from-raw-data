@@ -60,18 +60,28 @@ section = st.sidebar.radio(
     "Go to:",
     ("Box plot of invoices",
      "Active customers and number of orders",
-    #  "Ranking de Máquinas por Riscos",
-    #  "Média Móvel por Risco",
-    #  "Média Móvel por Equipe",
-    #  "Média Móvel por Tipo de Atividade",
-    #  "Análise Comparativa da Percepção",
-    #  "Sistemas de Recomendação",
-    #  "Simulação APR e Recomendação",
-    #  "Configurações"
+     "Average revenue per order",
+     "Revenue by customer type",
+     "Retention rate",
     )
 )
 
-###### Boxplot of invoices ######
+# section = st.sidebar.radio("From part 01:", ("Box plot of invoices",))
+# section = st.sidebar.radio(
+#     "From part 02:",
+#     ("Active customers and number of orders",
+#     #  "Ranking de Máquinas por Riscos",
+#     #  "Média Móvel por Risco",
+#     #  "Média Móvel por Equipe",
+#     #  "Média Móvel por Tipo de Atividade",
+#     #  "Análise Comparativa da Percepção",
+#     #  "Sistemas de Recomendação",
+#     #  "Simulação APR e Recomendação",
+#     #  "Configurações"
+#     )
+# )
+
+###### Box plot of invoices ######
 if section == "Box plot of invoices":
     st.header("**Box plot of invoices**")
     # Good. Now we need a selector so that people can choose which group they want to visualize
@@ -84,10 +94,10 @@ if section == "Box plot of invoices":
     st.write('')   # skip the line fandango!
     # And then the plot is shown according to the selected option: 
     if option != 'Show all':
-        st.subheader(f"Box plot of invoices of {option}")
+        st.subheader(f"Box plot of invoices - {option}")
         st.plotly_chart(plot_group_box(options[option]), use_container_width=True)
     else:
-        st.subheader(f"Box plots of invoices for all groups")
+        st.subheader(f"Box plots of invoices - All groups")
         fig_all = make_subplots(
             rows=3, cols=2,
             vertical_spacing=0.08,
@@ -105,6 +115,9 @@ elif section == "Active customers and number of orders":
     # Our good old selector
     option = st.selectbox('Select group:', options)
     st.write('')
+    st.write("Some customers make more than 2 purchases per month.")
+    st.write("And all groups follow similar trends, so nothing special here.")
+    st.write('')
     # ...and the plots
     if option != 'Show all':
         st.subheader(f"Active customers and number of orders - {option}")
@@ -112,4 +125,50 @@ elif section == "Active customers and number of orders":
     else:
         st.subheader(f"Active customers and number of orders - All groups")
         for idx, df_invoices in enumerate(options['Show all'].values()):
-            st.plotly_chart(plot_active_customers_and_orders(df_invoices, f"Grupo {idx+1}"), use_container_width=True)
+            st.plotly_chart(plot_active_customers_and_orders(df_invoices, f"Group {idx+1}"), use_container_width=True)
+    
+###### Average revenue per order ######
+elif section == "Average revenue per order":
+    st.header("**Average revenue per order**")
+    option = st.selectbox('Select group:', options)
+    st.write('')
+    st.write("Not much to say here...")
+    st.write('')
+    if option != 'Show all':
+        st.subheader(f"Average revenue per order - {option}")
+        st.plotly_chart(plot_avg_revenue(options[option]), use_container_width=True)
+    else:
+        st.subheader(f"Average revenue per order - All groups")
+        for idx, df_invoices in enumerate(options['Show all'].values()):
+            st.plotly_chart(plot_avg_revenue(df_invoices, f"Group {idx+1}"), use_container_width=True)
+
+###### Revenue by customer type ######
+elif section == "Revenue by customer type":
+    st.header("**Revenue by customer type**")
+    option = st.selectbox('Select group:', options)
+    st.write('')
+    st.write("A new customer is someone who made their first purchase in a given month.")
+    #st.write("A new customer is someone who made their first purchase in a given month.")
+    st.write('')
+    if option != 'Show all':
+        st.subheader(f"Revenue by customer type - {option}")
+        st.plotly_chart(plot_revenue_by_type(options[option]), use_container_width=True)
+    else:
+        st.subheader(f"Revenue by customer type - All groups")
+        for idx, df_invoices in enumerate(options['Show all'].values()):
+            st.plotly_chart(plot_revenue_by_type(df_invoices, f"Group {idx+1}"), use_container_width=True)
+
+###### Retention rate ######
+elif section == "Retention rate":
+    st.header("**Retention rate**")
+    option = st.selectbox('Select group:', options)
+    st.write('')
+    st.write("Retention rate is an important metric that indicates how well our products fit the market and how sticky is our service.")
+    st.write('')
+    if option != 'Show all':
+        st.subheader(f"Retention rate - {option}")
+        st.plotly_chart(plot_retention_rate(options[option]), use_container_width=True)
+    else:
+        st.subheader(f"Retention rate - All groups")
+        for idx, df_invoices in enumerate(options['Show all'].values()):
+            st.plotly_chart(plot_retention_rate(df_invoices, f"Group {idx+1}"), use_container_width=True)
