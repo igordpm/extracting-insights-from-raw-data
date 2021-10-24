@@ -57,7 +57,8 @@ def normalize_price_and_quantity(d_f):
     pandas.DataFrame
         Normalized dataframe.
     """
-    df = d_f.query("(Price > 0) & (Quantity > 0)", inplace=True)
+    df = d_f.copy()
+    df = d_f.query("(Price > 0) & (Quantity > 0)")
     return df
 
 # This is just a copypasta of code from part 01, check the notebook for detailed info:
@@ -145,7 +146,7 @@ def create_invoice_dataframe(df, group=1):
         If `group` is not valid.
     """
     if group not in [0, 1, 2, 3]:
-        raise ValueError("'group' parameter must be an int between 0 a 3")
+        raise ValueError("'group' parameter must be an int between 0 and 3")
 
     else:
         invoices = df.groupby(['Invoice']).agg({'Quantity': 'sum',
@@ -161,18 +162,19 @@ def create_invoice_dataframe(df, group=1):
         UIF_price = invoices.Price.quantile(.75) + 1.5 * IQ_price
         UOF_price = invoices.Price.quantile(.75) + 3 * IQ_price
         # Group 2:
-        df2 = invoices.query('(Quantity <= @UOF_quantity) | (Price <= @UOF_price)')
+        removed_invoices = invoices.query('(Quantity > @UOF_quantity) | (Price > @UOF_price)').index.tolist()
+        invoices2 = invoices.query("index not in @removed_invoices")
         # Group 3:
-        df3 = invoices.query('(Quantity <= @UIF_quantity) | (Price <= @UIF_price)')
-
+        removed_invoices = invoices.query('(Quantity > @UIF_quantity) | (Price > @UIF_price)').index.tolist()
+        invoices3 = invoices.query("index not in @removed_invoices")
         if group == 1:
             return invoices
         if group == 2:
-            return df2
+            return invoices2
         if group == 3:
-            return df3
+            return invoices3
         if group == 0:
-            return invoices, df2, df3
+            return invoices, invoices2, invoices3
 
 # This is just a copypasta of code from part 01, check the notebook for detailed info:
 def plot_group_box(df):
@@ -242,7 +244,7 @@ def adjust_time_window(df):
     return adjusted_df
 
 # This is just a copypasta of code from part 02, check the notebook for detailed info:
-def plot_active_customers_and_orders(df):
+def plot_active_customers_and_orders(df, title=None):
     """
     Generate a single bar plot of monthly active customers and monthly orders.
 
@@ -250,6 +252,8 @@ def plot_active_customers_and_orders(df):
     ----------
     df : pandas.DataFrame
         Dataframe of invoices.
+    title : str, optional
+        Title of plot.
 
     Returns
     -------
@@ -272,14 +276,14 @@ def plot_active_customers_and_orders(df):
             go.Bar(name='Monthly Active Customers', y=df_monthly_customers['Customer ID'], x=df_monthly_customers.index),
             go.Bar(name='Monthly Orders', y=df_monthly_orders['Price'], x=df_monthly_orders.index)
     ])
-    fig.update_layout(title='Active customers and number of orders',
+    fig.update_layout(title=title,
                     title_x=0.5,
                     xaxis_title='Month',
                     yaxis_title='Amount')
     return fig
 
 # This is just a copypasta of code from part 02, check the notebook for detailed info:
-def plot_avg_revenue(df):
+def plot_avg_revenue(df, title=None):
     """
     Generate a bar plot of the monthly average revenue per order.
 
@@ -287,6 +291,8 @@ def plot_avg_revenue(df):
     ----------
     df : pandas.DataFrame
         Dataframe of invoices.
+    title : str, optional
+        Title of plot.
 
     Returns
     -------
@@ -301,7 +307,7 @@ def plot_avg_revenue(df):
     fig = (
     px.bar(data_frame=df_avg_revenue, y='Price')
     )
-    fig.update_layout(title='Average revenue per order',
+    fig.update_layout(title=title,
                     title_x=0.5,
                     xaxis_title='Month',
                     yaxis_title='Revenue')
@@ -358,7 +364,7 @@ def get_month_name(df):
     return df2
 
 # This is just a copypasta of code from part 02, check the notebook for detailed info:
-def plot_revenue_by_type(d_f):
+def plot_revenue_by_type(d_f, title=None):
     """
     Generate a line plot of revenue by customer type.
 
@@ -368,6 +374,8 @@ def plot_revenue_by_type(d_f):
     ----------
     d_f : pandas.DataFrame
         Dataframe of invoices.
+    title : str, optional
+        Title of plot.
 
     Returns
     -------
@@ -411,7 +419,7 @@ def plot_revenue_by_type(d_f):
             y=invoices_by_type.groupby("InvoiceDate", sort=False)['Price'].sum(),
             x=invoices_by_type.groupby("InvoiceDate", sort=False)['Price'].sum().index)
     ])
-    fig.update_layout(title='Revenue by customer type',
+    fig.update_layout(title=title,
                     title_x=0.5,
                     xaxis_title='Month',
                     yaxis_title='Revenue')
