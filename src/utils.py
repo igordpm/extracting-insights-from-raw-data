@@ -337,7 +337,8 @@ def clean_customer_id(d_f):
     pandas.DataFrame
         Normalized dataframe.
     """
-    df = d_f.dropna(subset=['Customer ID'])
+    df = d_f.copy()
+    df = df.dropna(subset=['Customer ID'])
     df['Customer ID'] = pd.to_numeric(df['Customer ID']).astype(int).astype(str)
     return df
 
