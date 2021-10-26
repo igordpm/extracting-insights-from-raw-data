@@ -52,17 +52,19 @@ options = {
 
 # So far so good. Let's start getting our dashboard rollin'
 # We need a title, right?
-st.title("Almighty dashboard!")   # sorry, i couldn't come up with anything else
+st.title("A Dashboard Without A Decent Title")   # sorry, i couldn't come up with anything else
 
 # ...and a sidebar!
 st.sidebar.title("Select visualization")
 section = st.sidebar.radio(
     "Go to:",
-    ("Box plot of invoices",
+    ("Summary",
+    "Box plot of invoices",
      "Active customers and number of orders",
      "Average revenue per order",
      "Revenue by customer type",
      "Retention rate",
+     "Customer segmentation - RFM analysis"
     )
 )
 
@@ -81,6 +83,21 @@ section = st.sidebar.radio(
 #     )
 # )
 
+###### Summary ######
+if section == "Summary":
+    st.header("**Summary**")   # a nice header...
+    st.write('')   # skipping a line for prettiness
+    st.checkbox("Add visualizations from part 01", value=True)   # just a standard checkbox
+    st.checkbox("Add visualizations from part 02", value=True)   # value=True just makes sure it is checked when first rendered
+    st.checkbox("Add visualizations from part 03")
+    st.checkbox("Add visualizations from part 04")
+    st.checkbox("Add visualizations from part 05")
+    st.checkbox("Add 'Show all groups' option in selectboxes", value=True)
+    st.checkbox("Improve visibility of all 'Show all' sections (subplots, maybe?)")
+    st.checkbox("Check if it is possible to have a single selector for multiple `st.radio`'s in series")
+    st.checkbox("Daily dose of coffee, one cup in the morning and one in the afternoon", value=True)
+    st.checkbox("<an empty space just in case I come up with something new>")
+
 ###### Box plot of invoices ######
 if section == "Box plot of invoices":
     st.header("**Box plot of invoices**")
@@ -97,7 +114,7 @@ if section == "Box plot of invoices":
         st.subheader(f"Box plot of invoices - {option}")
         st.plotly_chart(plot_group_box(options[option]), use_container_width=True)
     else:
-        st.subheader(f"Box plots of invoices - All groups")
+        st.subheader(f"Box plot of invoices - All groups")
         fig_all = make_subplots(
             rows=3, cols=2,
             vertical_spacing=0.08,
@@ -172,3 +189,32 @@ elif section == "Retention rate":
         st.subheader(f"Retention rate - All groups")
         for idx, df_invoices in enumerate(options['Show all'].values()):
             st.plotly_chart(plot_retention_rate(df_invoices, f"Group {idx+1}"), use_container_width=True)
+
+###### Customer segmentation - RFM analysis ######
+if section == "Customer segmentation - RFM analysis":
+    st.header("**Customer segmentation - RFM analysis**")
+    # Good. Now we need a selector so that people can choose which group they want to visualize
+    option = st.selectbox('Select group:', options)
+    st.write('')   # skip the line fandango!
+    st.write("RFM analysis is a marketing technique used to quantitatively rank and group customers based on the recency, frequency and monetary total of their recent transactions to identify the best customers and perform targeted marketing campaigns")
+    st.write("- Recency: How recent was the customer's last purchase? Customers who recently made a purchase will still have the product on their mind and are more likely to purchase or use the product again. Businesses often measure recency in days. But, depending on the product, they may measure it in years, weeks or even hours;")
+    st.write("- Frequency: How often did this customer make a purchase in a given period? Customers who purchased once are often are more likely to purchase again. Additionally, first time customers may be good targets for follow-up advertising to convert them into more frequent customers;")
+    st.write("- Monetary value: How much money did the customer spend in a given period? Customers who spend a lot of money are more likely to spend money in the future and have a high value to a business.")
+    st.write("*Source:* [SearchDataManagement](https://searchdatamanagement.techtarget.com/definition/RFM-analysis)")
+    st.write('')   # skip the line fandango!
+    # And then the plot is shown according to the selected option: 
+    if option != 'Show all':
+        st.subheader(f"Customer segmentation - RFM analysis - {option}")
+        # st.plotly_chart(plot_group_box(options[option]), use_container_width=True)
+    else:
+        st.subheader(f"Customer segmentation - RFM analysis - All groups")
+        # fig_all = make_subplots(
+        #     rows=3, cols=2,
+        #     vertical_spacing=0.08,
+        #     subplot_titles=['Group 1', 'Group 1', 'Group 2', 'Group 2', 'Group 3', 'Group 3']
+        # )
+        # for idx, df_invoices in enumerate(options['Show all'].values()):
+        #     fig_all.add_box(y=df_invoices.Price, name='Price', row=idx+1, col=1)
+        #     fig_all.add_box(y=df_invoices.Quantity, name='Quantity', row=idx+1, col=2)
+        # fig_all.update_layout(height=900, showlegend=False)
+        # st.plotly_chart(fig_all, use_container_width=True)

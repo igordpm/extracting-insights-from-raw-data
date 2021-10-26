@@ -1,3 +1,4 @@
+from typing import DefaultDict
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -15,6 +16,19 @@ from statistics import mode
 # Lez go!
 #####
 
+### Extra stuff ###
+#
+# Plots from the 'See all' options in Streamlit could look a lot better, but there is a problem.
+# They can look a lot smoother if grouped together into a single figure (subplots), but the functions
+# in the notebooks were created to return a fully populated figure.
+# Plotly's make_subplots function does not allow a figure to be fit inside a figure of subplots, only a trace.
+# A trace is a type of plot (bar, histogram, line, scatter, box, choropleth, etc.).
+# For consistency, the functions created in the notebooks will be exactly reproduced here, but with a
+# parameter that allows the user to select what is returned: a figure or a trace.
+# These additions will be marked with "Extra stuff", so don't worry.
+# Another issue is that make_subplots and Plotly Express do not work very well together.
+# Thus, when the returned figure is generated with Plotly Express, we are gonna rewrite it to be a trace
+# from graph_objects. Bummer, I know...
 
 # From Part 01:
 
@@ -177,53 +191,75 @@ def create_invoice_dataframe(df, group=1):
             return invoices, invoices2, invoices3
 
 # This is just a copypasta of code from part 01, check the notebook for detailed info:
-def plot_group_box(df):
+def plot_group_box(df, output='fig'):
     """
     Generate a box plot of 'Price' and 'Quantity'. 
     
     Both box plots are shown side by side, in the same figure.
 
+    If output='trace', traces are returned in the format: trace1(Price), trace2(Quantity).
+
     Parameters
     ----------
     df : pandas.DataFrame
         Dataframe of invoices.
+    output : {'fig', 'trace'}, default 'fig'
+        Type of object to be returned.
 
     Returns
     -------
-    graph_objects.Figure
-        Figure containing both box plots.
+    graph_objects.Figure or graph_objects.Box, graph_objects.Box
+        A single figure containing both box plots or two go.Box traces.
     """
-    fig = make_subplots(rows=1, cols=2)
-    fig.add_box(y=df.Price, name='Price', row=1, col=1)
-    fig.add_box(y=df.Quantity, name='Quantity', row=1, col=2)
-    return fig
+    if output == 'fig':
+        fig = make_subplots(rows=1, cols=2)
+        fig.add_box(y=df.Price, name='Price', row=1, col=1)
+        fig.add_box(y=df.Quantity, name='Quantity', row=1, col=2)
+        return fig
+    elif output == 'trace':   # Extra stuff!
+        trace1 = go.Box(y=df.Price, name='Price')
+        trace2 = go.Box(y=df.Quantity, name='Quantity')
+        return trace1, trace2
+    else:
+        raise ValueError("'output' parameter must be one of 'fig' or 'trace'")
 
 
 # From Part 02:
 
 # This is just a copypasta of code from part 02, check the notebook for detailed info:
-def plot_monthly_resample(df):
+def plot_monthly_resample(df, output='fig'):
     """
     Generate a bar plot of 'Price' and 'Quantity' grouped by month. 
     
     Both bar plots are shown side by side, in the same figure.
 
+    If output='trace', traces are returned in the format: trace1(Price), trace2(Quantity).
+
     Parameters
     ----------
     df : pandas.DataFrame
         Dataframe of invoices.
+    output : {'fig', 'trace'}, default 'fig'
+        Type of object to be returned.
 
     Returns
     -------
-    graph_objects.Figure
-        Figure containing both boxplots.
+    graph_objects.Figure or graph_objects.Bar, graph_objects.Bar
+        A single figure containing both bar plots or two go.Bar traces.
     """
     resampled_df = df.resample(rule='M', on='InvoiceDate').sum()   # grouping by month
-    fig = make_subplots(rows=1, cols=2)
-    fig.add_trace(go.Bar(y=resampled_df.Price, x=resampled_df.index, name='Price'), row=1, col=1)
-    fig.add_trace(go.Bar(y=resampled_df.Quantity, x=resampled_df.index, name='Quantity'), row=1, col=2)
-    # by default, the last day of the month is shown, but the data represents the whole month
-    return fig
+    trace1 = go.Bar(y=resampled_df.Price, x=resampled_df.index, name='Price')
+    trace2 = go.Bar(y=resampled_df.Quantity, x=resampled_df.index, name='Quantity')
+    if output == 'fig':
+        fig = make_subplots(rows=1, cols=2)
+        fig.add_trace(trace1, row=1, col=1)
+        fig.add_trace(trace2, row=1, col=2)
+        # by default, the last day of the month is shown, but the data represents the whole month
+        return fig
+    elif output == 'trace':   # Extra stuff!
+        return trace1, trace2
+    else:
+        raise ValueError("'output' parameter must be one of 'fig' or 'trace'")
 
 # This is just a copypasta of code from part 02, check the notebook for detailed info:
 def adjust_time_window(df):
@@ -244,9 +280,11 @@ def adjust_time_window(df):
     return adjusted_df
 
 # This is just a copypasta of code from part 02, check the notebook for detailed info:
-def plot_active_customers_and_orders(df, title=None):
+def plot_active_customers_and_orders(df, title=None, output='fig'):
     """
     Generate a single bar plot of monthly active customers and monthly orders.
+
+    If output='trace', traces are returned in the format: trace1(Actv. Custm.), trace2(Orders).
 
     Parameters
     ----------
@@ -254,38 +292,44 @@ def plot_active_customers_and_orders(df, title=None):
         Dataframe of invoices.
     title : str, optional
         Title of plot.
+    output : {'fig', 'trace'}, default 'fig'
+        Type of object to be returned.
 
     Returns
     -------
-    graph_objects.Figure
-        Figure containing a single bar plot, with both data.
+    graph_objects.Figure or graph_objects.Bar, graph_objects.Bar
+        A single figure containing both bar plots or two go.Bar traces.
     """
     df_monthly_customers = (
             df[['Customer ID']]
             .groupby(df['InvoiceDate'].dt.month_name().str[:3], sort=False)
             .nunique()
     )
-
     df_monthly_orders = (
             df[['Price']]   # selecting any column (we just need the number of entries for each month, since each entry is a unique invoice number)
             .groupby(df['InvoiceDate'].dt.month_name().str[:3], sort=False)
             .count()
     )   # the column for this dataframe is named 'Price', but we know that it is not the case, right?
-
-    fig = go.Figure(data=[
-            go.Bar(name='Monthly Active Customers', y=df_monthly_customers['Customer ID'], x=df_monthly_customers.index),
-            go.Bar(name='Monthly Orders', y=df_monthly_orders['Price'], x=df_monthly_orders.index)
-    ])
-    fig.update_layout(title=title,
-                    title_x=0.5,
-                    xaxis_title='Month',
-                    yaxis_title='Amount')
-    return fig
+    trace1 = go.Bar(name='Monthly Active Customers', y=df_monthly_customers['Customer ID'], x=df_monthly_customers.index)
+    trace2 = go.Bar(name='Monthly Orders', y=df_monthly_orders['Price'], x=df_monthly_orders.index)
+    if output == 'fig':
+        fig = go.Figure(data=[trace1, trace2])
+        fig.update_layout(title=title,
+                        title_x=0.5,
+                        xaxis_title='Month',
+                        yaxis_title='Amount')
+        return fig
+    elif output == 'trace':   # Extra stuff!
+        return trace1, trace2
+    else:
+        raise ValueError("'output' parameter must be one of 'fig' or 'trace'")
 
 # This is just a copypasta of code from part 02, check the notebook for detailed info:
-def plot_avg_revenue(df, title=None):
+def plot_avg_revenue(df, title=None, output='fig'):
     """
     Generate a bar plot of the monthly average revenue per order.
+
+    If output='trace', returns a trace instead of a figure.
 
     Parameters
     ----------
@@ -293,25 +337,33 @@ def plot_avg_revenue(df, title=None):
         Dataframe of invoices.
     title : str, optional
         Title of plot.
+    output : {'fig', 'trace'}, default 'fig'
+        Type of object to be returned.
 
     Returns
     -------
-    graph_objects.Figure
-        Figure containing a bar plot.
+    graph_objects.Figure or graph_objects.Bar
+        Figure containing a bar plot or its go.Bar trace.
     """
     df_avg_revenue = (
         df[['Price']]
         .groupby(df['InvoiceDate'].dt.month_name().str[:3], sort=False)
         .mean()
     )
-    fig = (
-    px.bar(data_frame=df_avg_revenue, y='Price')
-    )
-    fig.update_layout(title=title,
-                    title_x=0.5,
-                    xaxis_title='Month',
-                    yaxis_title='Revenue')
-    return fig
+    if output == 'fig':
+        fig = (
+        px.bar(data_frame=df_avg_revenue, y='Price')
+        )
+        fig.update_layout(title=title,
+                        title_x=0.5,
+                        xaxis_title='Month',
+                        yaxis_title='Revenue')
+        return fig
+    elif output == 'trace':   # Extra stuff!
+        trace = go.Bar(y=df_avg_revenue.Price, x=df_avg_revenue.index)
+        return trace
+    else:
+        raise ValueError("'output' parameter must be one of 'fig' or 'trace'")
 
 # Now things start to get messy!
 # Most of this is just copypasta from part 02, but now we are changing our database.
@@ -365,23 +417,27 @@ def get_month_name(df):
     return df2
 
 # This is just a copypasta of code from part 02, check the notebook for detailed info:
-def plot_revenue_by_type(d_f, title=None):
+def plot_revenue_by_type(d_f, title=None, output='fig'):
     """
     Generate a line plot of revenue by customer type.
 
     Creates needed columns to plot the revenue generated by each type of customer and the total revenue, by month.  
 
+    If output='trace', traces are returned in the format: trace1(New), trace2(Existing), trace3(Total)
+    
     Parameters
     ----------
     d_f : pandas.DataFrame
         Dataframe of invoices.
     title : str, optional
         Title of plot.
+    output : {'fig', 'trace'}, default 'fig'
+        Type of object to be returned.
 
     Returns
     -------
-    graph_objects.Figure
-        Figure containing three line plots.
+    graph_objects.Figure or graph_objects.Scatter, graph_objects.Scatter, graph_objects.Scatter
+        Figure containing three line plots or 3 go.Scatter traces.
     """
     df = clean_customer_id(d_f)   # preprocessing
     first_month_series = (
@@ -399,37 +455,45 @@ def plot_revenue_by_type(d_f, title=None):
     aux_index = df.query("InvoiceDate.dt.month > FirstMonth").index
     # Changing `UserType` of the previously selected invoices
     df.loc[aux_index, 'CustomerType'] = 'Existing'
-
     invoices_by_type = (
         df.pipe(get_month_name)
         .groupby(['CustomerType', 'InvoiceDate'], as_index=False, sort=False)
         ['Price']
         .sum()
     )
-    fig = go.Figure(data=[
-        go.Scatter(
-            name='New',
-            y=invoices_by_type.query("CustomerType == 'New'")['Price'],
-            x=invoices_by_type.query("CustomerType == 'New'")['InvoiceDate']),
-        go.Scatter(
-            name='Existing',
-            y=invoices_by_type.query("CustomerType == 'Existing'")['Price'],
-            x=invoices_by_type.query("CustomerType == 'Existing'")['InvoiceDate']),
-        go.Scatter(
-            name='Total',
-            y=invoices_by_type.groupby("InvoiceDate", sort=False)['Price'].sum(),
-            x=invoices_by_type.groupby("InvoiceDate", sort=False)['Price'].sum().index)
-    ])
-    fig.update_layout(title=title,
-                    title_x=0.5,
-                    xaxis_title='Month',
-                    yaxis_title='Revenue')
-    return fig
+    trace1 = go.Scatter(
+        name='New',
+        y=invoices_by_type.query("CustomerType == 'New'")['Price'],
+        x=invoices_by_type.query("CustomerType == 'New'")['InvoiceDate']
+    )
+    trace2 = go.Scatter(
+        name='Existing',
+        y=invoices_by_type.query("CustomerType == 'Existing'")['Price'],
+        x=invoices_by_type.query("CustomerType == 'Existing'")['InvoiceDate']
+    )
+    trace3 = go.Scatter(
+        name='Total',
+        y=invoices_by_type.groupby("InvoiceDate", sort=False)['Price'].sum(),
+        x=invoices_by_type.groupby("InvoiceDate", sort=False)['Price'].sum().index
+    )
+    if output == 'fig':
+        fig = go.Figure(data=[trace1, trace2, trace3])
+        fig.update_layout(title=title,
+                        title_x=0.5,
+                        xaxis_title='Month',
+                        yaxis_title='Revenue')
+        return fig
+    elif output == 'trace':   # Extra stuff!
+        return trace1, trace2, trace3
+    else:
+        raise ValueError("'output' parameter must be one of 'fig' or 'trace'")
 
 # This is just a copypasta of code from part 02, check the notebook for detailed info:
-def plot_retention_rate(d_f, title=None):
+def plot_retention_rate(d_f, title=None, output='fig'):
     """
     Generate a line plot of retention rate by month.  
+
+    If output='trace', returns a trace instead of a figure.
 
     Parameters
     ----------
@@ -437,11 +501,13 @@ def plot_retention_rate(d_f, title=None):
         Dataframe of invoices.
     title : str, optional
         Title of plot.
+    output : {'fig', 'trace'}, default 'fig'
+        Type of object to be returned.
 
     Returns
     -------
-    graph_objects.Figure
-        Figure containing a line plot.
+    graph_objects.Figure or graph_objects.Scatter
+        A single figure containing a line plot or its go.Scatter trace.
     """
     active_months = (
         d_f
@@ -468,13 +534,50 @@ def plot_retention_rate(d_f, title=None):
         retention_array.append(retention_data)
     retention = pd.DataFrame(retention_array)
     retention['RetentionRate'] = retention['RetainedCustomers']/retention['TotalCustomers']
-    fig = (
-        px.line(
-            data_frame=retention,
-            y='RetentionRate',
-            x='Month')
-    )
-    fig.update_layout(title=title,
-                    title_x=0.5
-    )
-    return fig
+    if output == 'fig':        
+        fig = (
+            px.line(
+                data_frame=retention,
+                y='RetentionRate',
+                x='Month')
+        )
+        fig.update_layout(title=title,
+                        title_x=0.5
+        )
+        return fig
+    elif output == 'trace':
+        trace = go.Scatter(y=retention.RetentionRate, x=retention.index)
+    else:
+        raise ValueError("'output' parameter must be one of 'fig' or 'trace'")
+
+
+# From Part 03:
+
+# This is just a copypasta of code from part 03, check the notebook for detailed info:
+def sort_cluster(df, target_section):
+    """
+    Normalize cluster ordering.
+    
+    Sorts cluster labelling from best (4) to worst (0). 
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Dataframe containing `target_column`.
+    target_section : {'Recency', 'Frequency', 'Monetary'}
+        Section where normalization must be applied to.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Normalized dataframe.
+    """
+    normalized_df = df.copy()
+    target_column = target_section + 'Cluster'
+    from_describe = normalized_df.groupby(target_column).describe().xs(target_section, axis=1)['min']
+    sorted_index = from_describe.sort_values().index.tolist()
+    if target_section == 'Recency':
+        normalized_df[target_column] = normalized_df[target_column].replace(sorted_index, [4, 3, 2, 1, 0])
+    else:
+        normalized_df[target_column] = normalized_df[target_column].replace(sorted_index, [0, 1, 2, 3, 4])
+    return normalized_df
