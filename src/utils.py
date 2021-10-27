@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from statistics import mode
+from sklearn.cluster import KMeans
 
 #####                              UNDER DEVELOPMENT
 # Hi there, it's docstring time!
@@ -581,3 +582,80 @@ def sort_cluster(df, target_section):
     else:
         normalized_df[target_column] = normalized_df[target_column].replace(sorted_index, [0, 1, 2, 3, 4])
     return normalized_df
+
+# This is just a wrap up of all the steps taken to generate that amazing df of customer's data.
+def preprocessing_part_03(df_invoices):
+    """
+    Generate a df of customers info from the RFM analysis.
+    
+    Does all the preprocessing from part 03, going from the df of invoices to the final df. 
+
+    Parameters
+    ----------
+    df_invoices : pandas.DataFrame
+        Dataframe of invoices.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Dataframe of customers with RFM info.
+    """
+    df_invoices.rename(columns={'CustomerID': 'Customer ID'}, inplace=True)
+    df_preprocess = (
+        df_invoices
+        .pipe(adjust_time_window)
+        .pipe(normalize_invoicedate)
+        .pipe(clean_customer_id)
+    )
+    df = pd.DataFrame({'CustomerID': df_preprocess['Customer ID'].unique()})
+    df = (
+        df
+        .merge(
+                df_preprocess
+                .groupby('Customer ID')
+                ['InvoiceDate']
+                .max()
+                .rename('MaxPurchase'),
+                left_on='CustomerID',
+                right_on='Customer ID'
+        )
+    )
+    df['Recency'] = (df['MaxPurchase'].max() - df['MaxPurchase']).dt.days
+    kmeans = KMeans(n_clusters=5).fit(df[['Recency']])
+    df['RecencyCluster'] = kmeans.predict(df[['Recency']])
+    df = sort_cluster(df, 'Recency')
+    df = (
+        df
+        .merge(
+                df_preprocess
+                .groupby('Customer ID')
+                ['InvoiceDate']
+                .count()
+                .rename('Frequency'),
+                left_on='CustomerID',
+                right_on='Customer ID'
+        )
+    )
+    kmeans = KMeans(n_clusters=5).fit(df[['Frequency']])
+    df['FrequencyCluster'] = kmeans.predict(df[['Frequency']])
+    df = sort_cluster(df, 'Frequency')
+    df = (
+        df
+        .merge(
+                df_preprocess
+                .groupby('Customer ID')
+                ['Price']
+                .sum()
+                .rename('Monetary'),
+                left_on='CustomerID',
+                right_on='Customer ID'
+        )
+    )
+    kmeans = KMeans(n_clusters=5).fit(df[['Monetary']])
+    df['MonetaryCluster'] = kmeans.predict(df[['Monetary']])
+    df = sort_cluster(df, 'Monetary')
+    df['Score'] = df['RecencyCluster'] + df['FrequencyCluster'] + df['MonetaryCluster']
+    df['Segment'] = 'Low'
+    df.loc[df['Score'] > 3,'Segment'] = 'Mid' 
+    df.loc[df['Score'] > 7,'Segment'] = 'High'
+    return df

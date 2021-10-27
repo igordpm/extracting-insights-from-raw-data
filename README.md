@@ -22,6 +22,5 @@ This `Online Retail II` dataset contains all the transactions occurring for a UK
 1. Data cleaning
 2. Temporal analysis and Streamlit
 3. Customer segmentation (Recency-Frequency-Monetary value)
-4. Lifetime value prediction
-5. Churn prediction
-6. ***undefined***
+4. Predicting next purchase day
+5. Lifetime value prediction
