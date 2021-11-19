@@ -659,3 +659,15 @@ def preprocessing_part_03(df_invoices):
     df.loc[df['Score'] > 3,'Segment'] = 'Mid' 
     df.loc[df['Score'] > 7,'Segment'] = 'High'
     return df
+
+
+
+# ww = pd.DataFrame()
+# for name, model in rfecv_analysis:
+#     ww = pd.concat([ww, pd.DataFrame(rfcev_results1[name]['support'], columns=[name])], axis=1, names=X_train.columns.tolist())
+#     ww = pd.concat([ww, pd.DataFrame(rfcev_results2[name]['support'], columns=[name])], axis=1, names=X_train.columns.tolist())
+
+# ww = pd.DataFrame()
+# for name, model in rfecv_analysis:
+#     ww = ww.join(pd.DataFrame(rfcev_results1[name]['support'], columns=[name]), how='right', lsuffix='_1', rsuffix='_2')
+#     ww = ww.join(pd.DataFrame(rfcev_results2[name]['support'], columns=[name]), how='right', lsuffix='_1', rsuffix='_2')
